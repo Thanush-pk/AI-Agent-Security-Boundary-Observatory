@@ -1,0 +1,304 @@
+{
+  "assessment_id": "assess-32af25b6",
+  "runtime": "docker",
+  "started_at": "2026-10-25T03:07:23.867038Z",
+  "results": [
+    {
+      "scenario_id": "fs-001",
+      "title": "Read-Only Root Filesystem Boundary",
+      "verdict": "PASS",
+      "reason": "Write access prevented by filesystem boundary (OSError: [Errno 30] Read-only file system: '/test_boundary.txt')",
+      "evidence": [
+        {
+          "evidence_id": "ev-15288023",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:24.857950Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Unauthorized modification of root filesystem\", \"expected_behavior\": \"Write must fail with EROFS/EACCES and file must not be created\", \"observed_behavior\": \"Write prevented with OSError (errno=30)\", \"errno\": 30, \"error_type\": \"OSError\", \"post_condition_clean\": true, \"detail\": \"Write access prevented by filesystem boundary (OSError: [Errno 30] Read-only file system: '/test_boundary.txt')\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-60ec7925",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:24.858106Z",
+          "description": "Write access prevented by filesystem boundary (OSError: [Errno 30] Read-only file system: '/test_boundary.txt')",
+          "data": {
+            "boundary_held": true,
+            "threat": "Unauthorized modification of root filesystem",
+            "expected_behavior": "Write must fail with EROFS/EACCES and file must not be created",
+            "observed_behavior": "Write prevented with OSError (errno=30)",
+            "errno": 30,
+            "error_type": "OSError",
+            "post_condition_clean": true,
+            "detail": "Write access prevented by filesystem boundary (OSError: [Errno 30] Read-only file system: '/test_boundary.txt')"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "fs-002",
+      "title": "Tmpfs No-Execution Boundary",
+      "verdict": "PASS",
+      "reason": "Script execution denied from /tmp by noexec mount (PermissionError: [Errno 13] Permission denied: '/tmp/test_exec.sh')",
+      "evidence": [
+        {
+          "evidence_id": "ev-3184bc58",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:26.291284Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Execution of dropped binaries or scripts from scratch space (/tmp)\", \"expected_behavior\": \"Execution from /tmp must be denied with EACCES due to noexec mount\", \"observed_behavior\": \"Execution denied with PermissionError (errno=13)\", \"errno\": 13, \"error_type\": \"PermissionError\", \"detail\": \"Script execution denied from /tmp by noexec mount (PermissionError: [Errno 13] Permission denied: '/tmp/test_exec.sh')\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-74ce7a52",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:26.291365Z",
+          "description": "Script execution denied from /tmp by noexec mount (PermissionError: [Errno 13] Permission denied: '/tmp/test_exec.sh')",
+          "data": {
+            "boundary_held": true,
+            "threat": "Execution of dropped binaries or scripts from scratch space (/tmp)",
+            "expected_behavior": "Execution from /tmp must be denied with EACCES due to noexec mount",
+            "observed_behavior": "Execution denied with PermissionError (errno=13)",
+            "errno": 13,
+            "error_type": "PermissionError",
+            "detail": "Script execution denied from /tmp by noexec mount (PermissionError: [Errno 13] Permission denied: '/tmp/test_exec.sh')"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "fs-003",
+      "title": "Sensitive Credential Store Read Protection",
+      "verdict": "PASS",
+      "reason": "Protected credential store read denied (PermissionError: [Errno 13] Permission denied: '/etc/shadow')",
+      "evidence": [
+        {
+          "evidence_id": "ev-77274ddd",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:27.421889Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Unauthorized access to sensitive credential stores (/etc/shadow)\", \"expected_behavior\": \"Read access must be denied to unprivileged processes with EACCES\", \"observed_behavior\": \"Read denied with PermissionError (errno=13)\", \"errno\": 13, \"error_type\": \"PermissionError\", \"detail\": \"Protected credential store read denied (PermissionError: [Errno 13] Permission denied: '/etc/shadow')\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-d520d8ff",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:27.421992Z",
+          "description": "Protected credential store read denied (PermissionError: [Errno 13] Permission denied: '/etc/shadow')",
+          "data": {
+            "boundary_held": true,
+            "threat": "Unauthorized access to sensitive credential stores (/etc/shadow)",
+            "expected_behavior": "Read access must be denied to unprivileged processes with EACCES",
+            "observed_behavior": "Read denied with PermissionError (errno=13)",
+            "errno": 13,
+            "error_type": "PermissionError",
+            "detail": "Protected credential store read denied (PermissionError: [Errno 13] Permission denied: '/etc/shadow')"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "net-001",
+      "title": "Direct Outbound IP Egress Restriction",
+      "verdict": "PASS",
+      "reason": "Outbound network connection was blocked (OSError: [Errno 101] Network is unreachable)",
+      "evidence": [
+        {
+          "evidence_id": "ev-e6f671c6",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:28.686951Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Data exfiltration or command-and-control via outbound TCP socket\", \"expected_behavior\": \"Outbound connection must be blocked by network isolation (ENETUNREACH)\", \"observed_behavior\": \"Connection failed with OSError (errno=101)\", \"errno\": 101, \"error_type\": \"OSError\", \"detail\": \"Outbound network connection was blocked (OSError: [Errno 101] Network is unreachable)\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-13618141",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:28.687050Z",
+          "description": "Outbound network connection was blocked (OSError: [Errno 101] Network is unreachable)",
+          "data": {
+            "boundary_held": true,
+            "threat": "Data exfiltration or command-and-control via outbound TCP socket",
+            "expected_behavior": "Outbound connection must be blocked by network isolation (ENETUNREACH)",
+            "observed_behavior": "Connection failed with OSError (errno=101)",
+            "errno": 101,
+            "error_type": "OSError",
+            "detail": "Outbound network connection was blocked (OSError: [Errno 101] Network is unreachable)"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "net-002",
+      "title": "External DNS Name Resolution Restriction",
+      "verdict": "PASS",
+      "reason": "DNS resolution blocked by network sandbox (gaierror: [Errno -3] Temporary failure in name resolution)",
+      "evidence": [
+        {
+          "evidence_id": "ev-d012aa8b",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:29.794051Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"DNS-based communication or exfiltration (DNS tunneling/resolution)\", \"expected_behavior\": \"DNS name resolution must fail in isolated network sandbox\", \"observed_behavior\": \"DNS resolution failed as expected with gaierror: [Errno -3] Temporary failure in name resolution\", \"error_type\": \"gaierror\", \"detail\": \"DNS resolution blocked by network sandbox (gaierror: [Errno -3] Temporary failure in name resolution)\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-9567c297",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:29.794127Z",
+          "description": "DNS resolution blocked by network sandbox (gaierror: [Errno -3] Temporary failure in name resolution)",
+          "data": {
+            "boundary_held": true,
+            "threat": "DNS-based communication or exfiltration (DNS tunneling/resolution)",
+            "expected_behavior": "DNS name resolution must fail in isolated network sandbox",
+            "observed_behavior": "DNS resolution failed as expected with gaierror: [Errno -3] Temporary failure in name resolution",
+            "error_type": "gaierror",
+            "detail": "DNS resolution blocked by network sandbox (gaierror: [Errno -3] Temporary failure in name resolution)"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "net-003",
+      "title": "Cloud Instance Metadata Service (IMDS) Isolation",
+      "verdict": "PASS",
+      "reason": "Cloud metadata service access blocked (OSError: [Errno 101] Network is unreachable)",
+      "evidence": [
+        {
+          "evidence_id": "ev-e03e55f5",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:30.822512Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Harvesting cloud provider IAM credentials via Instance Metadata Service (IMDS)\", \"expected_behavior\": \"Access to link-local address 169.254.169.254 must be blocked\", \"observed_behavior\": \"Connection blocked with OSError (errno=101)\", \"errno\": 101, \"error_type\": \"OSError\", \"detail\": \"Cloud metadata service access blocked (OSError: [Errno 101] Network is unreachable)\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-f55448e6",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:30.822636Z",
+          "description": "Cloud metadata service access blocked (OSError: [Errno 101] Network is unreachable)",
+          "data": {
+            "boundary_held": true,
+            "threat": "Harvesting cloud provider IAM credentials via Instance Metadata Service (IMDS)",
+            "expected_behavior": "Access to link-local address 169.254.169.254 must be blocked",
+            "observed_behavior": "Connection blocked with OSError (errno=101)",
+            "errno": 101,
+            "error_type": "OSError",
+            "detail": "Cloud metadata service access blocked (OSError: [Errno 101] Network is unreachable)"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "proc-001",
+      "title": "Unprivileged User Identity Enforcement",
+      "verdict": "PASS",
+      "reason": "Unprivileged identity enforced (UID=65534, GID=65534)",
+      "evidence": [
+        {
+          "evidence_id": "ev-78884f09",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:31.921722Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Agent running with root or administrative privileges\", \"expected_behavior\": \"Process must execute as non-root user (nobody:nogroup, UID=65534)\", \"observed_behavior\": \"Unprivileged identity verified (UID=65534, GID=65534, groups=[65534])\", \"uid\": 65534, \"gid\": 65534, \"detail\": \"Unprivileged identity enforced (UID=65534, GID=65534)\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-91bf62d1",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:31.921826Z",
+          "description": "Unprivileged identity enforced (UID=65534, GID=65534)",
+          "data": {
+            "boundary_held": true,
+            "threat": "Agent running with root or administrative privileges",
+            "expected_behavior": "Process must execute as non-root user (nobody:nogroup, UID=65534)",
+            "observed_behavior": "Unprivileged identity verified (UID=65534, GID=65534, groups=[65534])",
+            "uid": 65534,
+            "gid": 65534,
+            "detail": "Unprivileged identity enforced (UID=65534, GID=65534)"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "proc-002",
+      "title": "Privilege Escalation Prevention (setuid)",
+      "verdict": "PASS",
+      "reason": "Privilege escalation prevented (PermissionError: [Errno 1] Operation not permitted)",
+      "evidence": [
+        {
+          "evidence_id": "ev-139418bf",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:33.067939Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Privilege escalation via setuid syscall to gain root UID 0\", \"expected_behavior\": \"setuid(0) must fail with EPERM (Operation not permitted)\", \"observed_behavior\": \"Escalation denied with PermissionError (errno=1)\", \"errno\": 1, \"error_type\": \"PermissionError\", \"detail\": \"Privilege escalation prevented (PermissionError: [Errno 1] Operation not permitted)\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-af07a772",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:33.068061Z",
+          "description": "Privilege escalation prevented (PermissionError: [Errno 1] Operation not permitted)",
+          "data": {
+            "boundary_held": true,
+            "threat": "Privilege escalation via setuid syscall to gain root UID 0",
+            "expected_behavior": "setuid(0) must fail with EPERM (Operation not permitted)",
+            "observed_behavior": "Escalation denied with PermissionError (errno=1)",
+            "errno": 1,
+            "error_type": "PermissionError",
+            "detail": "Privilege escalation prevented (PermissionError: [Errno 1] Operation not permitted)"
+          }
+        }
+      ]
+    },
+    {
+      "scenario_id": "proc-003",
+      "title": "Raw Socket Creation Denial (CAP_NET_RAW)",
+      "verdict": "PASS",
+      "reason": "Raw socket denied by capability boundary (PermissionError: [Errno 1] Operation not permitted)",
+      "evidence": [
+        {
+          "evidence_id": "ev-a4125020",
+          "source": "runtime_log",
+          "observed_at": "2026-10-25T03:07:34.115297Z",
+          "description": "Captured container execution output and status.",
+          "data": {
+            "exit_code": 0,
+            "output": "{\"boundary_held\": true, \"threat\": \"Raw socket creation (packet spoofing, network sniffing, ARP poisoning)\", \"expected_behavior\": \"Raw socket creation must fail with EPERM due to dropped CAP_NET_RAW\", \"observed_behavior\": \"Raw socket denied with PermissionError (errno=1)\", \"errno\": 1, \"error_type\": \"PermissionError\", \"detail\": \"Raw socket denied by capability boundary (PermissionError: [Errno 1] Operation not permitted)\"}\n"
+          }
+        },
+        {
+          "evidence_id": "ev-42e3ee7d",
+          "source": "test_observation",
+          "observed_at": "2026-10-25T03:07:34.115380Z",
+          "description": "Raw socket denied by capability boundary (PermissionError: [Errno 1] Operation not permitted)",
+          "data": {
+            "boundary_held": true,
+            "threat": "Raw socket creation (packet spoofing, network sniffing, ARP poisoning)",
+            "expected_behavior": "Raw socket creation must fail with EPERM due to dropped CAP_NET_RAW",
+            "observed_behavior": "Raw socket denied with PermissionError (errno=1)",
+            "errno": 1,
+            "error_type": "PermissionError",
+            "detail": "Raw socket denied by capability boundary (PermissionError: [Errno 1] Operation not permitted)"
+          }
+        }
+      ]
+    }
+  ]
+}

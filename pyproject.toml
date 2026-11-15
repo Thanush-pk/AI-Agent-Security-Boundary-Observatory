@@ -1,0 +1,33 @@
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-boundary-observatory"
+version = "0.1.0"
+description = "Evidence-based security assessments for AI agent runtimes"
+requires-python = ">=3.11"
+dependencies = [
+    "typer",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "docker",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+observatory = "observatory.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "src"]
+
+[tool.ruff]
+line-length = 88
