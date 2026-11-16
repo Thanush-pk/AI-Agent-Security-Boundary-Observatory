@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Runtime-Docker%20Sandbox-2496ED.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Core%20Engine-Passing%20(20%2F20%20Tests)-brightgreen.svg)]()
+[![Status](https://img.shields.io/badge/Core%20Engine-Passing%20(22%2F22%20Tests)-brightgreen.svg)]()
 
 ---
 
@@ -124,12 +124,14 @@ The Observatory includes a baseline suite of 9 controlled boundary scenarios acr
 - Python 3.11+
 - Docker Desktop or Docker Engine running locally
 
+Developed and tested on Ubuntu 26.04 (aarch64) with Docker Engine 29.
+
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/openshell-observatory.git
-cd openshell-observatory
+git clone https://github.com/Thanush-pk/AI-Agent-Security-Boundary-Observatory.git
+cd AI-Agent-Security-Boundary-Observatory
 
 # Create and activate a virtual environment
 python -m venv .venv
@@ -161,11 +163,14 @@ observatory run --scenario net-001
 ### 3. Run the Full Security Assessment & Export JSON
 ```bash
 observatory run --output report.json
+
+# Choose the runtime to assess (currently only: docker)
+observatory run --runtime docker
 ```
 
 Output:
 ```text
-Running assessment with 9 scenario(s) against DockerRuntime...
+Running assessment with 9 scenario(s) against docker...
 
 [PASS] fs-001: Read-Only Root Filesystem Boundary
        Reason: Write access prevented by filesystem boundary (OSError: [Errno 30] Read-only file system: '/test_boundary.txt')
@@ -260,8 +265,8 @@ The primary upcoming milestone is extending the Observatory beyond Docker to sup
   - Implement the `Runtime` protocol (`check_available()`, `run_python()`) matching the pattern established by `DockerRuntime`.
   - Interface with OpenShell's container/daemon API or CLI to spawn disposable, ephemeral sandbox execution contexts.
 - **Multi-Runtime CLI Execution**:
-  - Extend `observatory run` with a `--runtime` / `-r` flag (`--runtime docker` or `--runtime openshell`).
-  - Allow running assessments against both runtimes simultaneously for differential security auditing.
+  - `observatory run --runtime` / `-r` already selects a runtime from the `RUNTIMES` registry in `cli.py`; `openshell` will be added there once the adapter exists.
+  - Allow running assessments against both runtimes for differential security auditing.
 - **Comparative Security Benchmarking (Docker vs. OpenShell)**:
   - Benchmark OpenShell against the 9 baseline security scenarios:
     - *Filesystem*: Does OpenShell enforce root immutability and `noexec` on scratch/tmp volumes?
@@ -312,6 +317,7 @@ The primary upcoming milestone is extending the Observatory beyond Docker to sup
 - [x] 9 baseline controlled boundary scenarios (Filesystem, Network, Process)
 - [x] Forensic timeline reconstruction & run comparison / regression detection
 - [x] CLI commands (`run`, `scenarios`, `timeline`, `compare`)
+- [x] Runtime selection via `--runtime` (registry-based, Docker only for now)
 - [x] Executive test results documentation ([AGENT_BOUNDARY_OBSERVATORY_TEST_RESULTS.md](AGENT_BOUNDARY_OBSERVATORY_TEST_RESULTS.md))
 - [ ] **NVIDIA OpenShell runtime adapter integration (`OpenShellRuntime`)**
 - [ ] Differential benchmarking (Docker vs. OpenShell isolation comparison)

@@ -1,18 +1,8 @@
-
-from dataclasses import dataclass
-
 import docker
 from docker.errors import DockerException, ImageNotFound
 from requests.exceptions import ReadTimeout
 
-
-@dataclass(frozen=True)
-class ExecutionResult:
-    """Observable outcome of one isolated container execution."""
-
-    exit_code: int
-    output: str
-    timed_out: bool = False
+from observatory.runtime.base import ExecutionResult
 
 
 class DockerRuntimeError(RuntimeError):

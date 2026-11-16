@@ -15,6 +15,9 @@ from observatory.reports import export_report, load_report
 from observatory.runtime.docker_runtime import DockerRuntime, DockerRuntimeError
 from observatory.scenarios import get_default_scenarios, get_scenario_by_id
 
+# Add new runtimes here; each takes timeout_seconds and implements the Runtime protocol.
+RUNTIMES = {"docker": DockerRuntime}
+
 app = typer.Typer(
     name="observatory",
     help="Evidence-based security assessments for AI agent runtimes.",
@@ -57,9 +60,20 @@ def run_assessment(
         int,
         typer.Option("--timeout", "-t", help="Timeout in seconds per scenario execution"),
     ] = 10,
+    runtime_name: Annotated[
+        str,
+        typer.Option("--runtime", "-r", help=f"Runtime to assess: {', '.join(RUNTIMES)}"),
+    ] = "docker",
 ) -> None:
-    """Run security boundary assessments in isolated Docker containers."""
-    runtime = DockerRuntime(timeout_seconds=timeout)
+    """Run security boundary assessments inside an isolated runtime."""
+    if runtime_name not in RUNTIMES:
+        typer.secho(
+            f"Unknown runtime '{runtime_name}'. Choose from: {', '.join(RUNTIMES)}.",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    runtime = RUNTIMES[runtime_name](timeout_seconds=timeout)
     try:
         runtime.check_available()
     except DockerRuntimeError as exc:
@@ -76,8 +90,8 @@ def run_assessment(
     else:
         scenarios = get_default_scenarios()
 
-    engine = AssessmentEngine(runtime=runtime, runtime_name="docker")
-    typer.echo(f"\nRunning assessment with {len(scenarios)} scenario(s) against DockerRuntime...\n")
+    engine = AssessmentEngine(runtime=runtime, runtime_name=runtime_name)
+    typer.echo(f"\nRunning assessment with {len(scenarios)} scenario(s) against {runtime_name}...\n")
 
     report = engine.run_assessment(scenarios)
 

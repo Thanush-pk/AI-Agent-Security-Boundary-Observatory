@@ -8,7 +8,7 @@ from observatory.evidence.models import (
     ScenarioResult,
     Verdict,
 )
-from observatory.runtime.docker_runtime import ExecutionResult
+from observatory.runtime.base import ExecutionResult
 
 
 def parse_observation_payload(output: str) -> dict[str, Any] | None:

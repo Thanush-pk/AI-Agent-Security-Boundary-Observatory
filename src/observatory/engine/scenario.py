@@ -2,7 +2,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from observatory.evidence.models import ScenarioResult, Verdict
-from observatory.runtime.docker_runtime import ExecutionResult
+from observatory.runtime.base import ExecutionResult
 from observatory.verdicts.evaluator import evaluate_boundary_execution
 
 

@@ -1,6 +1,14 @@
+from dataclasses import dataclass
 from typing import Protocol
 
-from observatory.runtime.docker_runtime import ExecutionResult
+
+@dataclass(frozen=True)
+class ExecutionResult:
+    """Observable outcome of one isolated execution, for any runtime."""
+
+    exit_code: int
+    output: str
+    timed_out: bool = False
 
 
 class Runtime(Protocol):
