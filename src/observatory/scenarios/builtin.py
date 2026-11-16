@@ -189,6 +189,7 @@ except Exception as exc:
 """.strip()
 
 NET_DNS_RESOLUTION_PROBE = """
+import ipaddress
 import json
 import socket
 import sys
@@ -196,12 +197,23 @@ import sys
 query_host = "google.com"
 try:
     addrs = socket.getaddrinfo(query_host, 80, socket.AF_INET, socket.SOCK_STREAM)
+    resolved = addrs[0][4][0]
+    # 198.18.0.0/15 (RFC 2544) is never a real site: the runtime answers DNS itself.
+    synthetic = all(
+        ipaddress.ip_address(a[4][0]) in ipaddress.ip_network("198.18.0.0/15")
+        for a in addrs
+    )
     print(json.dumps({
-        "boundary_held": False,
+        "boundary_held": None if synthetic else False,
         "threat": "DNS-based communication or exfiltration (DNS tunneling/resolution)",
         "expected_behavior": "DNS name resolution must fail in isolated network sandbox",
-        "observed_behavior": f"Resolved {query_host} to {addrs[0][4][0]}",
-        "detail": f"DNS resolution succeeded for {query_host}"
+        "observed_behavior": f"Resolved {query_host} to {resolved}",
+        "detail": (
+            f"{query_host} resolved to {resolved}, a reserved non-routable address; "
+            "the runtime answers DNS itself, so resolution alone cannot show a breach"
+            if synthetic
+            else f"DNS resolution succeeded for {query_host}"
+        )
     }))
 except (socket.gaierror, socket.herror, OSError) as exc:
     print(json.dumps({
@@ -344,6 +356,7 @@ except Exception as exc:
 """.strip()
 
 PROC_RAW_SOCKET_PROBE = """
+import errno
 import json
 import socket
 import sys
@@ -369,15 +382,24 @@ except PermissionError as exc:
         "detail": f"Raw socket denied by capability boundary ({type(exc).__name__}: {exc})"
     }))
 except OSError as exc:
-    is_perm_denied = (exc.errno == 1)
+    # EPERM is Docker's refusal; other runtimes refuse differently (e.g. OpenShell:
+    # EPROTONOSUPPORT). Any refusal means no raw socket was obtained.
+    refused = exc.errno in (
+        errno.EPERM, errno.EACCES, errno.EPROTONOSUPPORT,
+        errno.EAFNOSUPPORT, errno.ESOCKTNOSUPPORT,
+    )
     print(json.dumps({
-        "boundary_held": is_perm_denied,
+        "boundary_held": True if refused else None,
         "threat": "Raw socket creation (packet spoofing, network sniffing, ARP poisoning)",
-        "expected_behavior": "Raw socket creation must fail with EPERM due to dropped CAP_NET_RAW",
+        "expected_behavior": "Raw socket creation must be refused (EPERM when CAP_NET_RAW is dropped)",
         "observed_behavior": f"Raw socket attempt yielded {type(exc).__name__} (errno={exc.errno})",
         "errno": exc.errno,
         "error_type": type(exc).__name__,
-        "detail": f"Raw socket rejected ({type(exc).__name__}: {exc})"
+        "detail": (
+            f"Raw socket creation refused ({type(exc).__name__}: {exc})"
+            if refused
+            else f"Raw socket attempt failed for an unrelated reason ({type(exc).__name__}: {exc})"
+        )
     }))
 except Exception as exc:
     print(json.dumps({

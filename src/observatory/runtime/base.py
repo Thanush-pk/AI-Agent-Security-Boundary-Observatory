@@ -11,6 +11,10 @@ class ExecutionResult:
     timed_out: bool = False
 
 
+class RuntimeBackendError(RuntimeError):
+    """Raised when a runtime backend itself is unavailable or broken."""
+
+
 class Runtime(Protocol):
     """Protocol for isolated agent execution environments."""
 

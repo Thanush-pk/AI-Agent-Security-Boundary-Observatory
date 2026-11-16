@@ -2,10 +2,10 @@ import docker
 from docker.errors import DockerException, ImageNotFound
 from requests.exceptions import ReadTimeout
 
-from observatory.runtime.base import ExecutionResult
+from observatory.runtime.base import ExecutionResult, RuntimeBackendError
 
 
-class DockerRuntimeError(RuntimeError):
+class DockerRuntimeError(RuntimeBackendError):
     """Raised when the Docker runtime cannot execute a scenario."""
 
 

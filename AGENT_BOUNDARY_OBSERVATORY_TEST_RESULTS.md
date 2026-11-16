@@ -157,4 +157,4 @@ The evaluator should not assume that OpenShell has Docker's enforcement behavior
 
 ---
 
-**Status:** Docker assessment pipeline has a working reported test baseline, controlled negative-test coverage, report export, forensic timeline, and regression detection. OpenShell integration remains the next validation milestone.
+**Status:** Docker assessment pipeline has a working reported test baseline, controlled negative-test coverage, report export, forensic timeline, and regression detection. An OpenShell adapter has since been added and compared against this Docker baseline; see the Findings section of the README.

@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Runtime-Docker%20Sandbox-2496ED.svg)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Core%20Engine-Passing%20(22%2F22%20Tests)-brightgreen.svg)]()
+[![CI](https://github.com/Thanush-pk/AI-Agent-Security-Boundary-Observatory/actions/workflows/ci.yml/badge.svg)](https://github.com/Thanush-pk/AI-Agent-Security-Boundary-Observatory/actions/workflows/ci.yml)
 
 ---
 
@@ -33,6 +33,54 @@ As autonomous AI agents are granted access to execute code, manipulate tools, an
 
 4. **Security Regression Detection**:
    Compares assessment runs against baselines (e.g., across agent versions or sandbox configuration changes) to instantly flag security boundary regressions (`PASS` $\to$ `FAIL`) or degradations in CI/CD pipelines.
+
+---
+
+## Findings: Docker vs. NVIDIA OpenShell
+
+The same 9 scenarios were run against both runtimes on 2026-11-16.
+
+- **Machine:** Ubuntu 26.04 (aarch64), ASUS GX10 with NVIDIA GB10
+- **Versions:** Docker Engine 29.6.2, OpenShell 0.1.8
+- **Same for both:** image `python:3.12-slim`, 0.5 CPU, 128 MB memory
+- **Docker** uses the hardened configuration in `DockerRuntime` (all capabilities dropped, read-only root, `noexec` tmpfs, no network, non-root user).
+- **OpenShell** uses its **default** policy. No custom policy was applied.
+
+| Scenario | Docker | OpenShell | What happened on OpenShell |
+| :-- | :--: | :--: | :-- |
+| `fs-001` Read-only root | PASS | PASS | Write refused (`EACCES`) |
+| `fs-002` No exec from `/tmp` | PASS | **FAIL** | A script ran from `/tmp` |
+| `fs-003` Credential file read | PASS | PASS | `/etc/shadow` read refused |
+| `net-001` Outbound TCP | PASS | PASS | Refused with a permission error |
+| `net-002` DNS resolution | PASS | **INCONCLUSIVE** | Lookup succeeds with a placeholder address |
+| `net-003` Cloud metadata (IMDS) | PASS | PASS | Refused with a permission error |
+| `proc-001` Non-root user | PASS | PASS | UID 1000 (Docker: 65534). Both unprivileged |
+| `proc-002` `setuid(0)` | PASS | PASS | `EPERM` |
+| `proc-003` Raw socket | PASS | PASS | Refused with `EPROTONOSUPPORT` |
+
+**Totals:** Docker 9 PASS. OpenShell 7 PASS, 1 FAIL, 1 INCONCLUSIVE.
+Raw reports: [`docker_report.json`](docs/sample-reports/docker_report.json), [`openshell_report.json`](docs/sample-reports/openshell_report.json).
+
+### What the results mean
+
+- **`fs-002` is a real difference in defaults.** OpenShell's default policy allowed executing a script from `/tmp`, while the Docker setup blocks it with a `noexec` mount. OpenShell restricts files with a different mechanism, so this is a difference to be aware of, not necessarily a vulnerability. A custom policy might close it, which has not been tested yet.
+- **`net-002` cannot be judged by this probe.** `google.com` and a name that cannot exist (`no-such-host-xyz.example`) both resolved to `198.18.0.2`, a reserved benchmarking address. Meanwhile direct connections (`net-001`, `net-003`) were refused. This suggests OpenShell answers DNS itself and enforces its rules when a connection is attempted. That is an inference from these observations, not something confirmed in OpenShell's documentation. The probe reports `INCONCLUSIVE` for this case instead of a false `FAIL`.
+- **`proc-003` first showed a false `FAIL`.** OpenShell did refuse the raw socket, with a different error code than Docker's `EPERM`, and the probe only recognised `EPERM`. The probe now accepts any refusal code that means "denied" and treats unrelated errors as `INCONCLUSIVE`.
+
+### Caveats
+
+- This compares a **hardened Docker setup** with **OpenShell defaults**. It is not a ranking of the two technologies.
+- One machine, one run, nine checks. Failures are informative, but passing does not prove a sandbox is secure. See the [threat model](docs/threat-model.md) for scope and limits.
+
+To reproduce:
+
+```bash
+observatory run --runtime docker -o docker_report.json
+observatory run --runtime openshell -o openshell_report.json
+observatory compare docker_report.json openshell_report.json
+```
+
+> `compare` labels differences as `REGRESSION`. That wording fits the same runtime changing over time. Across two runtimes, read it as "diverges from the baseline".
 
 ---
 
@@ -123,6 +171,7 @@ The Observatory includes a baseline suite of 9 controlled boundary scenarios acr
 ### Prerequisites
 - Python 3.11+
 - Docker Desktop or Docker Engine running locally
+- Optional, for `--runtime openshell`: the [NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) CLI with its gateway running (`openshell status` should succeed)
 
 Developed and tested on Ubuntu 26.04 (aarch64) with Docker Engine 29.
 
@@ -164,8 +213,8 @@ observatory run --scenario net-001
 ```bash
 observatory run --output report.json
 
-# Choose the runtime to assess (currently only: docker)
-observatory run --runtime docker
+# Choose the runtime to assess: docker (default) or openshell
+observatory run --runtime openshell
 ```
 
 Output:
@@ -219,7 +268,13 @@ Report saved to: report.json
 observatory timeline report.json
 ```
 
-### 5. Compare Assessment Runs (Detect Regressions)
+### 5. Render a Shareable HTML Report
+```bash
+observatory html docker_report.json openshell_report.json -o report.html
+```
+Produces one self-contained page (no external files or scripts) with the runtimes side by side, a results table, and expandable per-scenario details. Pass a single report for a single-runtime page. The page for the sample results in this repo is [`docs/index.html`](docs/index.html).
+
+### 6. Compare Assessment Runs (Detect Regressions)
 ```bash
 observatory compare baseline_report.json current_report.json
 ```
@@ -246,35 +301,23 @@ ruff check .
 ## Technology Stack
 
 - **Core Engine & CLI**: Python 3.11+, Typer, Pydantic v2
-- **Runtime Virtualization**: Docker SDK for Python (isolated, disposable containers)
+- **Runtime Virtualization**: Docker SDK for Python (isolated, disposable containers) and the NVIDIA OpenShell CLI (disposable sandboxes)
 - **Forensics & Reports**: Chronological event ordering, JSON schema validation, regression diffing
-- **Future Integrations**: NVIDIA OpenShell adapter, FastAPI REST service, and React / TypeScript visualization dashboard
+- **Future Integrations**: FastAPI REST service and React / TypeScript visualization dashboard
 
 ---
 
-## Next Steps: Integrating NVIDIA OpenShell & Future Roadmap
+## Roadmap
 
-The primary upcoming milestone is extending the Observatory beyond Docker to support **NVIDIA OpenShell** as a first-class execution runtime, followed by API persistence and a web visualization dashboard.
+The OpenShell adapter and the first Docker vs. OpenShell comparison are done (see [Findings](#findings-docker-vs-nvidia-openshell)). Next come OpenShell-specific follow-ups, API persistence and a web dashboard.
 
-### 1. NVIDIA OpenShell Runtime Integration (Priority Milestone)
+### 1. OpenShell Follow-ups
 
-[NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) provides an isolated, high-performance sandbox environment tailored for agentic AI workloads and accelerated computing. Integrating OpenShell allows developers to rigorously test agent workloads in GPU-accelerated and micro-segmented environments.
+[NVIDIA OpenShell](https://github.com/NVIDIA/OpenShell) is implemented as `OpenShellRuntime` (`src/observatory/runtime/openshell_runtime.py`), selected with `observatory run --runtime openshell`. Each probe runs in a disposable sandbox created through the `openshell` CLI.
 
-#### Planned Integration Architecture:
-- **`OpenShellRuntime` Adapter (`src/observatory/runtime/openshell_runtime.py`)**:
-  - Implement the `Runtime` protocol (`check_available()`, `run_python()`) matching the pattern established by `DockerRuntime`.
-  - Interface with OpenShell's container/daemon API or CLI to spawn disposable, ephemeral sandbox execution contexts.
-- **Multi-Runtime CLI Execution**:
-  - `observatory run --runtime` / `-r` already selects a runtime from the `RUNTIMES` registry in `cli.py`; `openshell` will be added there once the adapter exists.
-  - Allow running assessments against both runtimes for differential security auditing.
-- **Comparative Security Benchmarking (Docker vs. OpenShell)**:
-  - Benchmark OpenShell against the 9 baseline security scenarios:
-    - *Filesystem*: Does OpenShell enforce root immutability and `noexec` on scratch/tmp volumes?
-    - *Network*: Does OpenShell prevent outbound C2 communication and link-local IMDS metadata theft?
-    - *Process & Capabilities*: Does OpenShell correctly enforce unprivileged user execution and prevent raw socket injection or `setuid` escalation?
-  - Capture OpenShell-specific isolation artifacts (GPU device node exposure, driver boundaries, and namespace isolation) as native `EvidenceRecord` sources.
-- **Differential Regression Testing**:
-  - Use `observatory compare docker_report.json openshell_report.json` to detect policy divergence and identify isolation gaps between container sandboxes and OpenShell agent runtimes.
+- **Custom policy run:** apply an OpenShell `--policy` file that restricts execution from `/tmp`, and check whether `fs-002` changes from FAIL to PASS.
+- **Stronger DNS scenario:** resolve a name and then try to connect to the answer, so the test works on runtimes that answer DNS themselves.
+- **Runtime-native evidence:** capture OpenShell-specific isolation artifacts (GPU device exposure, driver boundaries, namespaces) as `EvidenceRecord` sources.
 
 ---
 
@@ -317,10 +360,13 @@ The primary upcoming milestone is extending the Observatory beyond Docker to sup
 - [x] 9 baseline controlled boundary scenarios (Filesystem, Network, Process)
 - [x] Forensic timeline reconstruction & run comparison / regression detection
 - [x] CLI commands (`run`, `scenarios`, `timeline`, `compare`)
-- [x] Runtime selection via `--runtime` (registry-based, Docker only for now)
+- [x] Runtime selection via `--runtime` (registry-based: `docker`, `openshell`)
+- [x] GitHub Actions CI (lint and tests on Python 3.11, 3.12 and 3.13)
+- [x] [Threat model](docs/threat-model.md) documenting scope and limits
 - [x] Executive test results documentation ([AGENT_BOUNDARY_OBSERVATORY_TEST_RESULTS.md](AGENT_BOUNDARY_OBSERVATORY_TEST_RESULTS.md))
-- [ ] **NVIDIA OpenShell runtime adapter integration (`OpenShellRuntime`)**
-- [ ] Differential benchmarking (Docker vs. OpenShell isolation comparison)
+- [x] NVIDIA OpenShell runtime adapter (`OpenShellRuntime`)
+- [x] First differential benchmark (Docker vs. OpenShell, default policy)
+- [ ] OpenShell custom-policy run and stronger DNS scenario
 - [ ] FastAPI REST API and persistent storage (SQLite)
 - [ ] React / TypeScript web observatory dashboard
 - [ ] Extended scenario catalog (IPC boundaries, resource caps, environment leaks)

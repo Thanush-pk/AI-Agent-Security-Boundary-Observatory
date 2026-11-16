@@ -11,12 +11,14 @@ from observatory.forensics import (
     format_timeline_text,
     reconstruct_timeline,
 )
-from observatory.reports import export_report, load_report
-from observatory.runtime.docker_runtime import DockerRuntime, DockerRuntimeError
+from observatory.reports import export_report, load_report, render_html
+from observatory.runtime.base import RuntimeBackendError
+from observatory.runtime.docker_runtime import DockerRuntime
+from observatory.runtime.openshell_runtime import OpenShellRuntime
 from observatory.scenarios import get_default_scenarios, get_scenario_by_id
 
 # Add new runtimes here; each takes timeout_seconds and implements the Runtime protocol.
-RUNTIMES = {"docker": DockerRuntime}
+RUNTIMES = {"docker": DockerRuntime, "openshell": OpenShellRuntime}
 
 app = typer.Typer(
     name="observatory",
@@ -76,7 +78,7 @@ def run_assessment(
     runtime = RUNTIMES[runtime_name](timeout_seconds=timeout)
     try:
         runtime.check_available()
-    except DockerRuntimeError as exc:
+    except RuntimeBackendError as exc:
         typer.secho(f"Error: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1)
 
@@ -140,6 +142,29 @@ def show_timeline(
     timeline_text = format_timeline_text(events)
     typer.echo(f"\n{timeline_text}\n")
     typer.echo(f"Total reconstructed timeline events: {len(events)}")
+
+
+@app.command(name="html")
+def html_report(
+    report_files: Annotated[
+        list[Path],
+        typer.Argument(help="One or more assessment report JSON files (shown side by side)"),
+    ],
+    output: Annotated[
+        Path,
+        typer.Option("--output", "-o", help="HTML file to write"),
+    ] = Path("report.html"),
+) -> None:
+    """Render one or more assessment reports as a single self-contained HTML page."""
+    try:
+        reports = [load_report(path) for path in report_files]
+    except (OSError, ValueError) as exc:
+        typer.secho(f"Failed to load report: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render_html(reports), encoding="utf-8")
+    typer.echo(f"HTML report saved to: {output.resolve()}")
 
 
 @app.command(name="compare")
