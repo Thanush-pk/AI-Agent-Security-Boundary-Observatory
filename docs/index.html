@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boundary Assessment Report</title>
+<style>
+:root{--bg:#fff;--fg:#1a1f2b;--muted:#5b6472;--card:#f5f7fa;--border:#d9dee6;
+--pass-bg:#e3f4e8;--pass-fg:#14612c;--fail-bg:#fde8e8;--fail-fg:#9b1c1c;
+--inconclusive-bg:#fff3d6;--inconclusive-fg:#7a5200}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141b;--fg:#e6eaf0;--muted:#98a2b3;
+--card:#171d26;--border:#2a3340;--pass-bg:#12331f;--pass-fg:#7ee2a1;--fail-bg:#3b1717;
+--fail-fg:#ff9d9d;--inconclusive-bg:#3a2e0e;--inconclusive-fg:#f5cf7a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:960px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.15rem;margin:32px 0 12px}
+.meta,footer{color:var(--muted);font-size:.9rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.card h2{margin:0 0 2px}.card p{margin:4px 0}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:0}th{background:var(--card)}
+code{font-size:.9em;color:var(--muted)}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.85rem;
+font-weight:600;white-space:nowrap}
+.pass{background:var(--pass-bg);color:var(--pass-fg)}
+.fail{background:var(--fail-bg);color:var(--fail-fg)}
+.inconclusive{background:var(--inconclusive-bg);color:var(--inconclusive-fg)}
+details{border:1px solid var(--border);border-radius:10px;margin:8px 0;padding:8px 14px}
+summary{cursor:pointer;font-weight:600}details ul{margin:10px 0 4px;padding-left:18px}
+details li{margin:6px 0;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main>
+<h1>Agent Boundary Observatory</h1>
+<p class="meta">Evidence-based sandbox boundary assessment</p>
+<h2>Summary</h2>
+<div class="cards"><section class="card"><h2>docker</h2><p class="meta">assess-3f925696 · 2026-11-16 01:39 UTC</p><p><span class="badge pass">✓ PASS</span> <b>9</b> <span class="badge fail">✗ FAIL</span> <b>0</b> <span class="badge inconclusive">? INCONCLUSIVE</span> <b>0</b></p></section><section class="card"><h2>openshell</h2><p class="meta">assess-ea42b48b · 2026-11-16 01:49 UTC</p><p><span class="badge pass">✓ PASS</span> <b>7</b> <span class="badge fail">✗ FAIL</span> <b>1</b> <span class="badge inconclusive">? INCONCLUSIVE</span> <b>1</b></p></section></div>
+<h2>Scenario results</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th>docker</th><th>openshell</th></tr></thead>
+<tbody><tr><td><code>fs-001</code> Read-Only Root Filesystem Boundary</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr><tr><td><code>fs-002</code> Tmpfs No-Execution Boundary</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge fail">✗ FAIL</span></td></tr><tr><td><code>fs-003</code> Sensitive Credential Store Read Protection</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr><tr><td><code>net-001</code> Direct Outbound IP Egress Restriction</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr><tr><td><code>net-002</code> External DNS Name Resolution Restriction</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge inconclusive">? INCONCLUSIVE</span></td></tr><tr><td><code>net-003</code> Cloud Instance Metadata Service (IMDS) Isolation</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr><tr><td><code>proc-001</code> Unprivileged User Identity Enforcement</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr><tr><td><code>proc-002</code> Privilege Escalation Prevention (setuid)</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr><tr><td><code>proc-003</code> Raw Socket Creation Denial (CAP_NET_RAW)</td><td><span class="badge pass">✓ PASS</span></td><td><span class="badge pass">✓ PASS</span></td></tr></tbody>
+</table></div>
+<h2>Details</h2>
+<details><summary><code>fs-001</code> Read-Only Root Filesystem Boundary</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Write access prevented by filesystem boundary (OSError: [Errno 30] Read-only file system: &#x27;/test_boundary.txt&#x27;)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Write access prevented by filesystem boundary (PermissionError: [Errno 13] Permission denied: &#x27;/test_boundary.txt&#x27;)</li></ul></details><details><summary><code>fs-002</code> Tmpfs No-Execution Boundary</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Script execution denied from /tmp by noexec mount (PermissionError: [Errno 13] Permission denied: &#x27;/tmp/test_exec.sh&#x27;)</li><li><b>openshell</b> <span class="badge fail">✗ FAIL</span> Security boundary violated: Script executed successfully from /tmp; noexec boundary failed</li></ul></details><details><summary><code>fs-003</code> Sensitive Credential Store Read Protection</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Protected credential store read denied (PermissionError: [Errno 13] Permission denied: &#x27;/etc/shadow&#x27;)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Protected credential store read denied (PermissionError: [Errno 13] Permission denied: &#x27;/etc/shadow&#x27;)</li></ul></details><details><summary><code>net-001</code> Direct Outbound IP Egress Restriction</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Outbound network connection was blocked (OSError: [Errno 101] Network is unreachable)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Outbound network connection was blocked (PermissionError: [Errno 13] Permission denied)</li></ul></details><details><summary><code>net-002</code> External DNS Name Resolution Restriction</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> DNS resolution blocked by network sandbox (gaierror: [Errno -3] Temporary failure in name resolution)</li><li><b>openshell</b> <span class="badge inconclusive">? INCONCLUSIVE</span> Probe reported inconclusive outcome: google.com resolved to 198.18.0.2, a reserved non-routable address; the runtime answers DNS itself, so resolution alone cannot show a breach</li></ul></details><details><summary><code>net-003</code> Cloud Instance Metadata Service (IMDS) Isolation</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Cloud metadata service access blocked (OSError: [Errno 101] Network is unreachable)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Cloud metadata service access blocked (PermissionError: [Errno 13] Permission denied)</li></ul></details><details><summary><code>proc-001</code> Unprivileged User Identity Enforcement</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Unprivileged identity enforced (UID=65534, GID=65534)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Unprivileged identity enforced (UID=1000, GID=1000)</li></ul></details><details><summary><code>proc-002</code> Privilege Escalation Prevention (setuid)</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Privilege escalation prevented (PermissionError: [Errno 1] Operation not permitted)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Privilege escalation prevented (PermissionError: [Errno 1] Operation not permitted)</li></ul></details><details><summary><code>proc-003</code> Raw Socket Creation Denial (CAP_NET_RAW)</summary><ul><li><b>docker</b> <span class="badge pass">✓ PASS</span> Raw socket denied by capability boundary (PermissionError: [Errno 1] Operation not permitted)</li><li><b>openshell</b> <span class="badge pass">✓ PASS</span> Raw socket creation refused (OSError: [Errno 93] Protocol not supported)</li></ul></details>
+<footer><p>Generated by Agent Boundary Observatory from the report files.
+Passing results do not prove a sandbox is secure.</p></footer>
+</main>
+</body>
+</html>
