@@ -81,16 +81,6 @@ pytest -v        # unit tests, plus integration tests that need Docker
 ruff check .
 ```
 
-## Roadmap
-
-- [x] Docker and OpenShell runtimes, selectable with `--runtime`
-- [x] 9 scenarios, evidence-based verdicts, timeline, comparison, HTML report
-- [x] CI on Python 3.11, 3.12 and 3.13
-- [ ] OpenShell custom-policy run (does `fs-002` change?)
-- [ ] Stronger DNS scenario that resolves a name and then attempts the connection
-- [ ] REST API with persistent storage
-- [ ] Web dashboard
-- [ ] More scenarios (IPC, resource limits, environment leaks)
 
 ## Docs and license
 
